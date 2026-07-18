@@ -1,0 +1,329 @@
+{
+  "framework_id": "ai-product-pulse",
+  "framework_name": "AI Product Pulse",
+  "based_on_framework": "AI Metrics Triangle",
+  "version": "0.2.0",
+  "schema_version": "1.0.0",
+  "author": "Ravi Bheesetty",
+  "org": "TFPM",
+  "license": "MIT",
+  "description": "A three-layer measurement framework for AI products and AI features: Model Performance, Product Behaviour, and Business Outcome. Industry-agnostic by design — no built-in weighting assumes a particular sector. Applies at the level of a single AI feature, or a combination of AI features within one product. Encodes a fixed rubric, a shared maturity ladder, a verdict taxonomy, and a set of vanity-metric probes so an agent can triage what's tracked, flag what's missing, and explain why it matters. The scoring math in this file is deterministic; only the per-layer 1-5 judgment (evidence review) is left to the calling agent.",
+  "implementation_notes": "This file is the single source of truth. framework.yaml is a generated, read-only mirror produced by scripts/sync_framework_yaml.py — never hand-edited, regenerated after every change to this file. usecases/*.py in both the Python and Node packages must read thresholds, weights, and verdict rules from this file at runtime or build time — never hardcode a duplicate value. docs/mcp.md is generated from code, which is generated from this file, so none of the three can drift the way EvalSurfer's README and docs/mcp.md did.",
+
+  "unit_of_assessment": {
+    "scopes": ["feature", "product"],
+    "feature": "A single AI capability — one model, one workflow, one surfaced feature. This is the base unit the layers and indicators below describe directly.",
+    "product": "A combination of AI features within one product. Assessed by running the feature-level triage independently per feature, then rolling results up using the rules in the aggregation section below. Not a separate rubric — the same layers, indicators, and verdicts apply to each feature before rollup.",
+    "industry_scope": "None built in, on purpose. v1 ships with equal, fixed layer weights (see scoring.overall_score) and no sector-specific calibration. See scoring.overall_score.weights_extensibility for how sector weighting could be reintroduced later, once there's evidence to calibrate it against rather than defaults asserted without one."
+  },
+
+  "layers": [
+    {
+      "id": "model_performance",
+      "name": "Model Performance",
+      "order": 1,
+      "question": "Is the AI doing what it was built to do?",
+      "indicators": [
+        {
+          "id": "task_success_rate",
+          "name": "Task Success Rate",
+          "description": "Percentage of AI outputs that correctly complete the intended task, measured against a defined pass/fail rubric for that task.",
+          "unit": "percentage",
+          "direction": "higher_is_better"
+        },
+        {
+          "id": "confidence_calibration",
+          "name": "Confidence Calibration",
+          "description": "How closely the model's expressed or implied confidence tracks its actual correctness. Poor calibration means the model is as confident when wrong as when right.",
+          "unit": "calibration_error_pct",
+          "direction": "lower_is_better"
+        },
+        {
+          "id": "hallucination_rate",
+          "name": "Hallucination Rate",
+          "description": "Percentage of outputs containing claims not supported by the input, retrieved context, or ground truth.",
+          "unit": "percentage",
+          "direction": "lower_is_better"
+        },
+        {
+          "id": "grounding_coverage",
+          "name": "Grounding Coverage",
+          "description": "For retrieval- or tool-using systems, the percentage of factual claims traceable to a cited source.",
+          "unit": "percentage",
+          "direction": "higher_is_better",
+          "applicable_if": "system uses retrieval or tool calls"
+        }
+      ]
+    },
+    {
+      "id": "product_behaviour",
+      "name": "Product Behaviour",
+      "order": 2,
+      "question": "Are users interacting with AI output the way you designed for?",
+      "indicators": [
+        {
+          "id": "adoption_rate",
+          "name": "Adoption Rate",
+          "description": "Percentage of eligible users or sessions that engage with the AI feature at all, out of those exposed to it.",
+          "unit": "percentage",
+          "direction": "higher_is_better"
+        },
+        {
+          "id": "override_rate",
+          "name": "Override Rate",
+          "description": "Percentage of AI outputs that users manually edit, reject, or reverse before acting on them.",
+          "unit": "percentage",
+          "direction": "lower_is_better",
+          "risk_threshold": {
+            "operator": "gte",
+            "value": 40,
+            "signal": "trust_failure_risk",
+            "note": "Empirically, override rates at or above this level predict abandonment before they show up in churn numbers. Referenced directly by the trust_failure_signal verdict below."
+          }
+        },
+        {
+          "id": "repeat_use_rate",
+          "name": "Repeat Use Rate",
+          "description": "Percentage of users who use the AI feature again within a defined window after first use.",
+          "unit": "percentage",
+          "direction": "higher_is_better"
+        },
+        {
+          "id": "escalation_rate",
+          "name": "Escalation Rate",
+          "description": "Percentage of AI-handled interactions that get escalated to a human or a fallback path.",
+          "unit": "percentage",
+          "direction": "lower_is_better"
+        }
+      ]
+    },
+    {
+      "id": "business_outcome",
+      "name": "Business Outcome",
+      "order": 3,
+      "question": "Is the AI feature moving the business metric it was funded to move?",
+      "indicators": [
+        {
+          "id": "attributed_business_impact",
+          "name": "Attributed Business Impact",
+          "description": "Movement in the specific business metric this feature was funded against — revenue, conversion, retention, or cost, named per deployment rather than fixed here.",
+          "unit": "primary_metric_delta",
+          "direction": "context_dependent"
+        },
+        {
+          "id": "cost_to_serve_delta",
+          "name": "Cost-to-Serve Delta",
+          "description": "Change in fully-loaded unit cost per interaction — compute, human review, and support — after the AI feature shipped.",
+          "unit": "currency_delta",
+          "direction": "lower_is_better"
+        },
+        {
+          "id": "time_to_value",
+          "name": "Time to Value",
+          "description": "Change in time from user intent to realized outcome, with the AI feature versus without it.",
+          "unit": "time_delta",
+          "direction": "lower_is_better"
+        },
+        {
+          "id": "retention_or_renewal_impact",
+          "name": "Retention or Renewal Impact",
+          "description": "Effect on renewal, churn, or retention attributable to the AI feature.",
+          "unit": "percentage",
+          "direction": "higher_is_better",
+          "applicable_if": "subscription or recurring-revenue context"
+        }
+      ]
+    }
+  ],
+
+  "maturity_ladder": [
+    {
+      "level": 1,
+      "label": "No Tracking",
+      "description": "No indicator in this layer has a defined metric, an owner, or any logging in place."
+    },
+    {
+      "level": 2,
+      "label": "Ad Hoc",
+      "description": "At least one indicator is informally observed — a dashboard glance, a gut check — but not systematically logged or reviewed on any cadence."
+    },
+    {
+      "level": 3,
+      "label": "Instrumented",
+      "description": "Indicators are logged with explicit targets, but review is irregular and not yet tied to a specific decision."
+    },
+    {
+      "level": 4,
+      "label": "Operationalized",
+      "description": "Indicators are reviewed on a fixed cadence and have influenced at least one product or business decision in the last quarter."
+    },
+    {
+      "level": 5,
+      "label": "Closed-Loop",
+      "description": "Indicators feed a defined feedback mechanism — an experiment, a retraining trigger, a pricing or roadmap decision — with evidence the loop has fired at least once."
+    }
+  ],
+
+  "scoring": {
+    "layer_score_scale": "1-5, anchored to maturity_ladder",
+    "layer_score_method": "agent_judgment_against_rubric",
+    "layer_score_note": "The deterministic layer here stops at giving the agent the rubric. The agent reviews whatever evidence the user provides and assigns 1-5 per layer against the maturity_ladder anchors. Everything after that score exists — coverage math, verdicts, aggregation — is deterministic.",
+    "overall_score": {
+      "formula": "weighted_mean(layer_scores, weights)",
+      "weights": { "model_performance": 0.334, "product_behaviour": 0.333, "business_outcome": 0.333 },
+      "weights_extensibility": "Fixed and equal in v1, deliberately. Sector-specific weighting was cut from this version because the numbers weren't derived from real evidence — see CONTRIBUTING.md before proposing calibrated weights. A future calibration_status field and evidence-backed profiles can be reintroduced once golden-set cases exist to derive real numbers from, not before.",
+      "range": [1, 5],
+      "purpose": "A continuous read of overall measurement health, equally sensitive to all three layers regardless of industry or feature type."
+    },
+    "maturity_level": {
+      "formula": "min(layer_scores)",
+      "range": [1, 5],
+      "purpose": "The Triangle is only as strong as its weakest vertex. This deliberately does not average a blind spot away — a business cannot claim Level 4 maturity while one layer is still untracked."
+    }
+  },
+
+  "aggregation": {
+    "applies_when": "unit_of_assessment scope is \"product\" — rolling up two or more feature-level triage results into one product-level pulse.",
+    "product_maturity_level": {
+      "formula": "min(feature_maturity_levels)",
+      "rationale": "Same weakest-link principle as layer-level maturity_level. A product with four well-instrumented AI features and one completely blind feature is not a Level 4 product — this doesn't average the blind spot away, consistent with the Triangle's own logic."
+    },
+    "product_overall_score": {
+      "formula": "mean(feature_overall_scores)",
+      "rationale": "Unlike maturity_level, this single continuous number is allowed to average — it's meant to read as a portfolio health gauge, not a pass/fail gate."
+    },
+    "verdict_rollup": {
+      "rule": "Verdicts do not blend across features. Every verdict that fires at the feature level is retained and attributed to that specific feature in the product-level report.",
+      "rationale": "A single 'Balanced' product-level verdict could otherwise hide one feature with Business-Outcome Orphaned sitting next to three well-instrumented ones. The report lists which feature triggered which verdict; it does not summarize them away."
+    }
+  },
+
+  "verdicts": [
+    {
+      "id": "balanced",
+      "name": "Balanced",
+      "priority": 0,
+      "severity": "none",
+      "trigger_type": "all_layers_gte",
+      "trigger": { "value": 3 },
+      "trigger_description": "Every layer scores 3 or higher.",
+      "description": "All three layers are at least instrumented. This is a pass, not a ceiling — Operationalized and Closed-Loop are still worth pursuing.",
+      "investigative_questions": [
+        "Which layer has the lowest score, and what's the smallest step that would move it up one rung on the maturity ladder?",
+        "Is any layer's instrumentation reviewed only because this triage prompted someone to look, or is there a standing cadence?"
+      ]
+    },
+    {
+      "id": "business_outcome_orphaned",
+      "name": "Business-Outcome Orphaned",
+      "priority": 1,
+      "severity": "critical",
+      "trigger_type": "layer_equals",
+      "trigger": { "layer": "business_outcome", "value": 1 },
+      "trigger_description": "Business Outcome layer scores exactly 1 (No Tracking), regardless of the other two layers.",
+      "description": "The AI feature has no defined link to a business metric at all. This is the single most common and most expensive gap seen in practice — a feature can be well-built and well-used and still get cut in a budget review because nobody can point to what it moved.",
+      "investigative_questions": [
+        "What business metric was this feature's original business case or roadmap justification built on?",
+        "Who owns the number this feature was supposed to move, and have they been asked whether it moved?",
+        "If no such metric was ever defined, was this feature funded against a real business hypothesis, or built because it seemed worth doing?"
+      ]
+    },
+    {
+      "id": "trust_failure_signal",
+      "name": "Trust Failure Signal",
+      "priority": 2,
+      "severity": "high",
+      "trigger_type": "layer_gte_and_indicator_risk_threshold",
+      "trigger": {
+        "layer": "model_performance",
+        "layer_min_value": 4,
+        "indicator": "override_rate",
+        "uses_indicator_risk_threshold": true
+      },
+      "trigger_description": "Model Performance scores 4 or higher while the override_rate indicator has crossed its own risk_threshold (defined on the indicator, currently >= 40%).",
+      "description": "The model measures well internally, but users are overriding it faster than the threshold that historically predicts abandonment. This is a leading indicator, not a lagging one — it shows up here before it shows up as churn.",
+      "cross_reference": {
+        "framework": "AI Product Failure Triangle",
+        "author": "Ravi Bheesetty",
+        "node_referenced": "Trust Failure",
+        "relationship": "This verdict is an early-warning instrument for the Trust Failure node in the AI Product Failure Triangle. Same failure mode, caught in the metrics instead of in the churn report."
+      },
+      "investigative_questions": [
+        "What changed in the model, the UI, or the surrounding workflow right before the override rate crossed the risk threshold?",
+        "Are users overriding the output because it's wrong, or because it's right but not yet trusted?",
+        "Has anyone actually read a sample of the overridden outputs, or is this purely a rate observed from telemetry?"
+      ]
+    },
+    {
+      "id": "vanity_metric_risk",
+      "name": "Vanity-Metric Risk",
+      "priority": 3,
+      "severity": "medium",
+      "trigger_type": "layer_equals_and_other_gte",
+      "trigger": {
+        "layer": "business_outcome",
+        "value": 2,
+        "other_layers_min_value": 4,
+        "other_layers_mode": "any"
+      },
+      "trigger_description": "Business Outcome scores exactly 2 (Ad Hoc) while Model Performance or Product Behaviour scores 4 or higher.",
+      "description": "Business Outcome is nominally tracked but shallow, sitting next to layers that are heavily instrumented. The gap reads as smaller than it is — there's a metric, it's just decorative. Distinct from Business-Outcome Orphaned, which is a harder floor of zero tracking.",
+      "investigative_questions": [
+        "If the business outcome number were removed from the dashboard tomorrow, would anyone notice it was gone?",
+        "Is it reviewed on the same cadence as the other two layers, or does it only appear in a quarterly slide?",
+        "Was a target or threshold ever set for it, or is it tracked without anything that would trigger action?"
+      ]
+    },
+    {
+      "id": "blind_spot",
+      "name": "Blind Spot",
+      "priority": 4,
+      "severity": "high",
+      "trigger_type": "per_layer_equals_with_other_gte",
+      "trigger": { "this_layer_value": 1, "other_layer_min_value": 3, "excluded_layers": ["business_outcome"] },
+      "label_template": "Blind Spot: {layer_name}",
+      "trigger_description": "Evaluated once per layer, excluding business_outcome — that layer at value 1 is always represented by Business-Outcome Orphaned instead, never by this generic flag, so the same fact isn't reported twice under two names. Fires when a non-excluded layer scores exactly 1 while at least one other layer scores 3 or higher — i.e., the team is clearly capable of instrumenting, and chose not to for this layer.",
+      "description": "A generic, per-layer flag for Model Performance or Product Behaviour going untracked. Business Outcome going untracked is always Business-Outcome Orphaned instead — that's the named specialization for the costliest case, and it fully replaces this generic flag for that one layer rather than co-firing alongside it.",
+      "investigative_questions": [
+        "Given {layer_name} is untracked while another layer is solid, was that a deliberate scoping decision or an oversight?",
+        "What's the smallest instrumentation step that would move {layer_name} from No Tracking to Ad Hoc?"
+      ]
+    }
+  ],
+
+  "vanity_metric_probes": [
+    {
+      "id": "activity_masquerading_as_behaviour",
+      "pattern": "DAU/MAU or raw usage volume of the AI feature, reported as evidence for Product Behaviour.",
+      "why_it_fails": "Exposure and volume measure reach, not whether the output changed how the user acted. A feature can carry high usage and a near-100% override rate at the same time.",
+      "redirect_to": ["override_rate", "repeat_use_rate"]
+    },
+    {
+      "id": "internal_eval_as_business_outcome",
+      "pattern": "Model accuracy or an internal eval-set score, reported as evidence for Business Outcome.",
+      "why_it_fails": "This is Model Performance evidence, not Business Outcome evidence, no matter how good the score is. A model can score 95% on an eval set and move zero business metrics if nobody acts on its output.",
+      "redirect_to": ["attributed_business_impact"]
+    },
+    {
+      "id": "output_volume_as_progress",
+      "pattern": "Number of AI-generated outputs shipped, drafts produced, or automations triggered, presented as evidence for any layer.",
+      "why_it_fails": "Output volume is an activity metric. It says the system ran, not that it worked, was trusted, or mattered.",
+      "redirect_to": ["task_success_rate", "adoption_rate"]
+    },
+    {
+      "id": "sentiment_without_behaviour",
+      "pattern": "Positive sentiment from a user survey, reported alone as a trust signal.",
+      "why_it_fails": "Self-reported sentiment is weak evidence on its own. It should be corroborated by behavioral evidence — override rate, repeat use — before it counts as a tracked Product Behaviour indicator.",
+      "redirect_to": ["override_rate", "repeat_use_rate"]
+    }
+  ],
+
+  "cross_references": [
+    {
+      "framework": "AI Product Failure Triangle",
+      "author": "Ravi Bheesetty",
+      "relationship": "See the trust_failure_signal verdict above — it operationalizes the Trust Failure node as a measurable, early-firing condition rather than a retrospective label.",
+      "node_referenced": "Trust Failure"
+    }
+  ]
+}

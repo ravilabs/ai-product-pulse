@@ -1,0 +1,74 @@
+name: 'AI Product Pulse Guardrail Gate'
+description: >-
+  Runs `ai-product-pulse triage` (or `aggregate`) against an evidence
+  file and fails the build if any verdict at or above a given severity
+  fires. This is a thin wrapper around the existing CLI, not a separate
+  scoring engine — the report it checks is produced by the same
+  triage()/aggregate_product_pulse() functions everything else in this
+  repo uses.
+author: 'Ravi Bheesetty'
+
+inputs:
+  command:
+    description: "'triage' or 'aggregate'."
+    required: false
+    default: 'triage'
+  evidence-file:
+    description: >-
+      Path to the evidence JSON (triage) or features JSON (aggregate).
+    required: true
+  fail-on-severity:
+    description: >-
+      Minimum severity that fails the build: 'critical', 'high',
+      'medium', or 'low'. Any verdict at or above this level fails.
+    required: false
+    default: 'critical'
+  report-output:
+    description: 'Where to write the full report JSON, for a later step to upload as an artifact.'
+    required: false
+    default: 'ai-product-pulse-report.json'
+
+outputs:
+  report-path:
+    description: 'Path to the generated report JSON.'
+    value: ${{ steps.gate.outputs.report-path }}
+  verdicts:
+    description: 'JSON array of verdict IDs that fired.'
+    value: ${{ steps.gate.outputs.verdicts }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run triage/aggregate and check severity
+      id: gate
+      shell: bash
+      run: |
+        set -euo pipefail
+        ai-product-pulse "${{ inputs.command }}" \
+          --input "${{ inputs.evidence-file }}" \
+          --output "${{ inputs.report-output }}"
+
+        echo "report-path=${{ inputs.report-output }}" >> "$GITHUB_OUTPUT"
+
+        python3 - "${{ inputs.report-output }}" "${{ inputs.fail-on-severity }}" << 'PYEOF'
+        import json, sys
+
+        report_path, fail_on = sys.argv[1], sys.argv[2]
+        SEVERITY_RANK = {"none": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
+        threshold = SEVERITY_RANK[fail_on]
+
+        report = json.load(open(report_path))
+        verdicts = report.get("verdicts") or report.get("verdict_rollup") or []
+
+        print(f"::set-output name=verdicts::{json.dumps([v['verdict_id'] for v in verdicts])}")
+
+        failing = [v for v in verdicts if SEVERITY_RANK.get(v["severity"], 0) >= threshold]
+        if failing:
+            for v in failing:
+                label = f"{v['name']}" + (f" ({v['layer_id']})" if v.get("layer_id") else "")
+                print(f"::error::{label} — severity {v['severity']} >= threshold {fail_on}")
+            print(f"\n{len(failing)} verdict(s) at or above '{fail_on}' severity. Failing.")
+            sys.exit(1)
+
+        print(f"No verdicts at or above '{fail_on}' severity. Passing.")
+        PYEOF

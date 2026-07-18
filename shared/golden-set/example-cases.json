@@ -1,0 +1,133 @@
+{
+  "_notice": "SYNTHETIC EXAMPLE DATA — not real cases, not calibration evidence. Every case_id and description below is a constructed illustration proving golden_set_calibrate() works mechanically. See README.md in this directory before treating any number derived from this file as validated.",
+  "cases": [
+    {
+      "case_id": "illustrative-01-balanced",
+      "description": "Synthetic example: a feature where all three layers are at least Instrumented.",
+      "layers": [
+        {
+          "layer_id": "model_performance",
+          "score": 3,
+          "evidence_summary": "Illustrative: task success rate logged weekly against a fixed target.",
+          "indicators": [
+            { "indicator_id": "task_success_rate", "tracked": true, "value": 88.0, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "product_behaviour",
+          "score": 3,
+          "evidence_summary": "Illustrative: adoption rate logged monthly against a fixed target.",
+          "indicators": [
+            { "indicator_id": "adoption_rate", "tracked": true, "value": 61.0, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "business_outcome",
+          "score": 3,
+          "evidence_summary": "Illustrative: attributed business impact logged quarterly against a fixed target.",
+          "indicators": [
+            { "indicator_id": "attributed_business_impact", "tracked": true }
+          ]
+        }
+      ],
+      "expected_verdict_ids": ["balanced"],
+      "expected_maturity_level": 3
+    },
+    {
+      "case_id": "illustrative-02-business-outcome-orphaned",
+      "description": "Synthetic example: strong model and adoption, zero business metric ever defined.",
+      "layers": [
+        {
+          "layer_id": "model_performance",
+          "score": 4,
+          "evidence_summary": "Illustrative: reviewed on a fixed cadence, has influenced a model-selection decision.",
+          "indicators": [
+            { "indicator_id": "task_success_rate", "tracked": true, "value": 93.0, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "product_behaviour",
+          "score": 4,
+          "evidence_summary": "Illustrative: reviewed on a fixed cadence, has influenced a UX decision.",
+          "indicators": [
+            { "indicator_id": "adoption_rate", "tracked": true, "value": 74.0, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "business_outcome",
+          "score": 1,
+          "evidence_summary": "Illustrative: no business metric was ever attached to this feature's roadmap justification.",
+          "indicators": [
+            { "indicator_id": "attributed_business_impact", "tracked": false }
+          ]
+        }
+      ],
+      "expected_verdict_ids": ["business_outcome_orphaned"],
+      "expected_maturity_level": 1
+    },
+    {
+      "case_id": "illustrative-03-trust-failure-signal",
+      "description": "Synthetic example: strong internal model metrics, override rate past the risk threshold.",
+      "layers": [
+        {
+          "layer_id": "model_performance",
+          "score": 4,
+          "evidence_summary": "Illustrative: reviewed on a fixed cadence, has influenced a model-selection decision.",
+          "indicators": [
+            { "indicator_id": "task_success_rate", "tracked": true, "value": 90.0, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "product_behaviour",
+          "score": 2,
+          "evidence_summary": "Illustrative: override rate observed once in a support review, not logged systematically.",
+          "indicators": [
+            { "indicator_id": "override_rate", "tracked": true, "value": 52.0, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "business_outcome",
+          "score": 3,
+          "evidence_summary": "Illustrative: cost-to-serve delta logged monthly against a fixed target.",
+          "indicators": [
+            { "indicator_id": "cost_to_serve_delta", "tracked": true }
+          ]
+        }
+      ],
+      "expected_verdict_ids": ["trust_failure_signal"],
+      "expected_maturity_level": 2
+    },
+    {
+      "case_id": "illustrative-04-vanity-metric-risk-with-blind-spot",
+      "description": "Synthetic example: strong model layer, shallow business tracking, product behaviour untracked entirely.",
+      "layers": [
+        {
+          "layer_id": "model_performance",
+          "score": 5,
+          "evidence_summary": "Illustrative: feeds a defined retraining trigger, evidenced to have fired at least once.",
+          "indicators": [
+            { "indicator_id": "hallucination_rate", "tracked": true, "value": 1.2, "unit": "percentage" }
+          ]
+        },
+        {
+          "layer_id": "product_behaviour",
+          "score": 1,
+          "evidence_summary": "Illustrative: no product behaviour indicator has ever been logged for this feature.",
+          "indicators": [
+            { "indicator_id": "adoption_rate", "tracked": false }
+          ]
+        },
+        {
+          "layer_id": "business_outcome",
+          "score": 2,
+          "evidence_summary": "Illustrative: a business metric appears on a quarterly slide but has no defined target or owner.",
+          "indicators": [
+            { "indicator_id": "attributed_business_impact", "tracked": true }
+          ]
+        }
+      ],
+      "expected_verdict_ids": ["vanity_metric_risk", "blind_spot"],
+      "expected_maturity_level": 1
+    }
+  ]
+}

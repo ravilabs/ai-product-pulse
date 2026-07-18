@@ -1,0 +1,90 @@
+{
+  "report_id": "f46a6697-d408-4e74-ba5f-fe92d9ca95f0",
+  "framework_id": "ai-product-pulse",
+  "framework_version": "0.1.0",
+  "unit_of_assessment": "feature",
+  "subject_name": "AI Search Assistant",
+  "subject_description": "Semantic search over the internal knowledge base, launched last quarter.",
+  "generated_at": "2026-07-14T16:40:26.647336Z",
+  "generated_by_harness": "claude-code",
+  "layers": [
+    {
+      "layer_id": "model_performance",
+      "score": 4,
+      "maturity_label": "Operationalized",
+      "indicators": [
+        {
+          "indicator_id": "task_success_rate",
+          "tracked": true,
+          "value": 91.2,
+          "unit": "percentage",
+          "evidence_note": null,
+          "risk_threshold_exceeded": null
+        },
+        {
+          "indicator_id": "hallucination_rate",
+          "tracked": true,
+          "value": 3.1,
+          "unit": "percentage",
+          "evidence_note": null,
+          "risk_threshold_exceeded": null
+        }
+      ],
+      "evidence_summary": "Task success rate tracked weekly via a labeled eval set, reviewed in sprint retro."
+    },
+    {
+      "layer_id": "product_behaviour",
+      "score": 2,
+      "maturity_label": "Ad Hoc",
+      "indicators": [
+        {
+          "indicator_id": "override_rate",
+          "tracked": true,
+          "value": 46.0,
+          "unit": null,
+          "evidence_note": null,
+          "risk_threshold_exceeded": true
+        }
+      ],
+      "evidence_summary": "Override rate surfaced once during a support ticket review, not logged systematically."
+    },
+    {
+      "layer_id": "business_outcome",
+      "score": 1,
+      "maturity_label": "No Tracking",
+      "indicators": [
+        {
+          "indicator_id": "attributed_business_impact",
+          "tracked": false,
+          "value": null,
+          "unit": null,
+          "evidence_note": null,
+          "risk_threshold_exceeded": null
+        }
+      ],
+      "evidence_summary": "No business metric has been defined for this feature since launch."
+    }
+  ],
+  "overall_score": 2.33,
+  "maturity_level": 1,
+  "verdicts": [
+    {
+      "verdict_id": "business_outcome_orphaned",
+      "name": "Business-Outcome Orphaned",
+      "severity": "critical",
+      "message": "The AI feature has no defined link to a business metric at all. This is the single most common and most expensive gap seen in practice — a feature can be well-built and well-used and still get cut in a budget review because nobody can point to what it moved.",
+      "layer_id": null,
+      "feature_name": null
+    },
+    {
+      "verdict_id": "trust_failure_signal",
+      "name": "Trust Failure Signal",
+      "severity": "high",
+      "message": "The model measures well internally, but users are overriding it faster than the threshold that historically predicts abandonment. This is a leading indicator, not a lagging one — it shows up here before it shows up as churn.",
+      "layer_id": null,
+      "feature_name": null
+    }
+  ],
+  "vanity_metric_flags": [],
+  "recommendations": null
+}

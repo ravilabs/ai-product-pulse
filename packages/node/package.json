@@ -1,0 +1,46 @@
+{
+  "name": "ai-product-pulse",
+  "version": "0.2.0",
+  "description": "Deterministic triage for AI product features against the AI Product Pulse framework — Model Performance, Product Behaviour, Business Outcome.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Ravi Bheesetty",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ravilabs/ai-product-pulse.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "framework.json"
+  ],
+  "bin": {
+    "ai-product-pulse": "./dist/adapters/inbound/cli.js",
+    "ai-product-pulse-mcp": "./dist/adapters/inbound/mcpServer.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "pretest": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.0"
+  }
+}

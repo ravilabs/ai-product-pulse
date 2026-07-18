@@ -1,0 +1,49 @@
+{
+  "subject_name": "AI Search Assistant",
+  "subject_description": "Semantic search over the internal knowledge base, launched last quarter.",
+  "generated_by_harness": "claude-code",
+  "layers": [
+    {
+      "layer_id": "model_performance",
+      "score": 4,
+      "evidence_summary": "Task success rate tracked weekly via a labeled eval set, reviewed in sprint retro.",
+      "indicators": [
+        {
+          "indicator_id": "task_success_rate",
+          "tracked": true,
+          "value": 91.2,
+          "unit": "percentage"
+        },
+        {
+          "indicator_id": "hallucination_rate",
+          "tracked": true,
+          "value": 3.1,
+          "unit": "percentage"
+        }
+      ]
+    },
+    {
+      "layer_id": "product_behaviour",
+      "score": 2,
+      "evidence_summary": "Override rate surfaced once during a support ticket review, not logged systematically.",
+      "indicators": [
+        {
+          "indicator_id": "override_rate",
+          "tracked": true,
+          "value": 46.0
+        }
+      ]
+    },
+    {
+      "layer_id": "business_outcome",
+      "score": 1,
+      "evidence_summary": "No business metric has been defined for this feature since launch.",
+      "indicators": [
+        {
+          "indicator_id": "attributed_business_impact",
+          "tracked": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "AI Product Pulse"
+abstract: >-
+  Deterministic triage for AI product features against a three-layer
+  framework — Model Performance, Product Behaviour, Business Outcome —
+  exposed as an agent skill compatible with Claude Code, Cursor, OpenClaw,
+  Hermes, and the agentskills.io standard.
+version: "0.2.0"
+date-released: "2026-07-14"
+license: MIT
+repository-code: "https://github.com/ravilabs/ai-product-pulse"
+type: software
+authors:
+  - family-names: Bheesetty
+    given-names: Ravi
+    alias: ravilabs
+keywords:
+  - ai-product-management
+  - agent-skills
+  - model-context-protocol
+  - product-metrics
+  - llm-evaluation

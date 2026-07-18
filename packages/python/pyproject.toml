@@ -1,0 +1,29 @@
+[project]
+name = "ai-product-pulse"
+version = "0.2.0"
+description = "Deterministic triage for AI product features against the AI Product Pulse framework — Model Performance, Product Behaviour, Business Outcome."
+readme = "../../README.md"
+license = { text = "MIT" }
+authors = [{ name = "Ravi Bheesetty" }]
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0,<3",
+    "mcp>=1.0",
+]
+
+[project.urls]
+Repository = "https://github.com/ravilabs/ai-product-pulse"
+
+[project.scripts]
+ai-product-pulse = "ai_product_pulse.adapters.inbound.cli:main"
+ai-product-pulse-mcp = "ai_product_pulse.adapters.inbound.mcp_server:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "jsonschema>=4.0", "pyyaml>=6.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_product_pulse"]

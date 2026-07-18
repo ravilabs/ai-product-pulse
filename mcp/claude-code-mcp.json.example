@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "ai-product-pulse": {
+      "command": "ai-product-pulse-mcp"
+    }
+  }
+}
