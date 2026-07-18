@@ -1,0 +1,73 @@
+name: CI (Python)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install package + dev dependencies
+        run: pip install -e "packages/python[dev]"
+
+      - name: Run tests
+        run: |
+          PYTHONPATH=packages/python/src pytest packages/python/tests/ -v \
+            --cov=ai_product_pulse --cov-report=term-missing
+
+      - name: Verify the real (non-editable) install works standalone
+        # The editable install above can hide a packaging bug — this repo
+        # shipped one exactly this way once (framework.json not bundled,
+        # broke under a genuine `pip install` outside the monorepo). This
+        # step exists because of that, not as generic caution.
+        run: |
+          python -m venv /tmp/install_check
+          /tmp/install_check/bin/pip install -q packages/python
+          cd /tmp
+          echo '{"subject_name":"CI Check","layers":[
+            {"layer_id":"model_performance","score":3,"evidence_summary":"x","indicators":[]},
+            {"layer_id":"product_behaviour","score":3,"evidence_summary":"x","indicators":[]},
+            {"layer_id":"business_outcome","score":3,"evidence_summary":"x","indicators":[]}
+          ]}' | /tmp/install_check/bin/ai-product-pulse triage > /dev/null
+          echo "Real install produced a report successfully."
+
+  lint-and-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package + quality tools
+        run: |
+          pip install -e "packages/python[dev]"
+          pip install ruff mypy bandit
+
+      - name: ruff
+        run: ruff check packages/python/src/ai_product_pulse
+
+      - name: mypy --strict
+        run: mypy packages/python/src/ai_product_pulse --strict --ignore-missing-imports
+
+      - name: bandit (security)
+        run: bandit -r packages/python/src/ai_product_pulse
