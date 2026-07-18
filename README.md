@@ -1,3 +1,5 @@
+<img width="1280" height="640" alt="Git-AIP_Pulse" src="https://github.com/user-attachments/assets/b1fa4f4a-8876-4d0f-b5bc-fe3d7fa999b7" />
+
 # AI Product Pulse
 
 Deterministic triage for AI product features, built around a three-layer framework: Model Performance, Product Behaviour, Business Outcome. Ships as an agent skill for Claude Code, Cursor, OpenClaw, and Hermes, and follows the open [agentskills.io](https://agentskills.io) standard.
@@ -69,13 +71,13 @@ The framework itself — layers, indicators, verdict rules, the maturity ladder 
 
 Full design rationale, with citations: [`docs/architecture.md`](docs/architecture.md). Honest limits, including the one part of this pipeline that isn't deterministic: [`docs/failure-modes.md`](docs/failure-modes.md).
 
-The code itself follows Hexagonal Architecture (Cockburn, 2005): a domain core that knows nothing about how it's called, wrapped by ports and adapters for the two ways an agent actually reaches it — an MCP server and a CLI, both calling the identical underlying functions. Tool discovery follows the Model Context Protocol's own native primitives. Neither of these is a framework this project invented; both are cited, checkable, and older than this repository.
+The code itself follows Hexagonal Architecture, a domain core that knows nothing about how it's called, wrapped by ports and adapters for the two ways an agent actually reaches it — an MCP server and a CLI, both calling the identical underlying functions. Tool discovery follows the Model Context Protocol's own native primitives. Neither of these is a framework this project invented; both are cited, checkable, and older than this repository.
 
 Python is the reference implementation. A Node/TS port is planned, parity-tested against it rather than developed independently.
 
 ## Project status
 
-Early — v0.1, single feature and product-level triage working end to end. 60+ tests, all passing against a real (non-editable) package install, not just an editable dev checkout. See `CONTRIBUTING.md` for how to run the full check suite locally, and `RELEASING.md` for the current (manual, pre-PyPI) release process.
+Early — v0.1, single feature and product-level triage working end to end. 60+ tests, all passing against a real (non-editable) package install, not just an editable dev checkout. See `CONTRIBUTING.md` for how to run the full check suite locally, and `RELEASING.md` for the current (manual, pre-PyPI) release process. Watch out for the next iteration soon.
 
 ## Contributing
 
@@ -91,4 +93,4 @@ See `CITATION.cff`, or use GitHub's "Cite this repository" button on this repo's
 
 ---
 
-Built by [Ravi Bheesetty](https://tfpm.space) — author of *The Product PlayBook*, part of the [TFPM](https://tfpm.space) AI PM Toolkit.
+Built by [Ravi Bheesetty](https://www.linkedin.com/in/ravibheesetty/) — DM on Linkedin for any questions 
