@@ -1,0 +1,99 @@
+name: Publish
+
+# Triggered by pushing a version tag (see RELEASING.md), or manually via
+# workflow_dispatch for a retry without needing a new tag.
+#
+# Both jobs use OIDC trusted publishing — no long-lived tokens stored as
+# secrets anywhere in this repo or org. Both are also gated behind a
+# GitHub Environment with required reviewers (configure this in repo
+# Settings -> Environments -> pypi / npm -> "Required reviewers"): the
+# workflow triggers automatically, but pauses for a human approval
+# before the actual publish step runs. Publishing is irreversible on
+# both registries — this is the safety checkpoint for that, not
+# optional ceremony.
+#
+# First-publish asymmetry between the two registries (see RELEASING.md):
+#   - PyPI supports a "pending" trusted publisher — register one for
+#     ai-product-pulse before the project exists, and this workflow's
+#     first successful run creates it automatically. No manual step.
+#   - npm requires the package to already exist before trusted
+#     publishing can be configured for it. The very first npm publish
+#     has to happen manually (`npm publish` from an authenticated local
+#     session) — this workflow's npm job will fail until that's done
+#     once, by design, not as a bug.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  publish-python:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write # required for PyPI trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: pip install build
+
+      - name: Verify sync scripts have no pending drift
+        # Same check parity.yml runs on every push — repeated here as a
+        # last-line defense specifically before a publish, since this
+        # step is the one that's actually irreversible.
+        run: |
+          pip install -e "packages/python[dev]"
+          python scripts/sync_framework_yaml.py
+          python scripts/sync_report_schema.py
+          python scripts/sync_package_data.py
+          git diff --exit-code -- framework.yaml report.schema.json packages/python/src/ai_product_pulse/framework.json
+
+      - name: Build sdist and wheel
+        working-directory: packages/python
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/python/dist
+
+  publish-node:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      id-token: write # required for npm trusted publishing (OIDC)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install
+        working-directory: packages/node
+        run: npm ci
+
+      - name: Full test suite
+        # Includes the real npm pack + install + bin-symlink test
+        # (test/packaging.test.ts) — a publish should not proceed if
+        # that hasn't passed on this exact commit.
+        working-directory: packages/node
+        run: npm test
+
+      - name: Publish to npm
+        working-directory: packages/node
+        # npm CLI >= 11.5.1 auto-detects the OIDC environment and uses
+        # it in preference to any token. No NODE_AUTH_TOKEN needed or
+        # wanted here — its presence would silently take priority over
+        # OIDC if one were ever added by mistake.
+        run: npm publish
