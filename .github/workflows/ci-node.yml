@@ -1,0 +1,81 @@
+name: CI (Node)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 = Maintenance LTS, 24 = Active LTS, 26 = Current. Node 18
+        # and 20 are both EOL as of mid-2026 and deliberately excluded —
+        # see packages/node/package.json's engines field.
+        node-version: ["22", "24", "26"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: packages/node/package-lock.json
+
+      # The cross-language parity tests (test/crossLanguageParity.test.ts)
+      # shell out to the real Python CLI. Without Python available here,
+      # they skip silently rather than actually proving parity — this
+      # step is what makes them meaningful in CI, not just locally.
+      - name: Set up Python for cross-language parity tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python package
+        run: pip install -e packages/python
+
+      - name: Install Node dependencies
+        working-directory: packages/node
+        run: npm ci
+
+      - name: Run tests
+        # npm test runs the build first (pretest hook) — this is not
+        # optional. A test job that only ran `vitest run` would miss
+        # exactly the class of bug the packaging tests exist to catch:
+        # see test/packaging.test.ts's own comments for the two real,
+        # confirmed bugs that class of gap produced.
+        working-directory: packages/node
+        run: npm test
+
+  lint-and-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: packages/node/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/node
+        run: npm ci
+
+      - name: eslint
+        working-directory: packages/node
+        run: npm run lint
+
+      - name: tsc --noEmit (strict)
+        working-directory: packages/node
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: npm audit
+        working-directory: packages/node
+        run: npm audit --audit-level=high
