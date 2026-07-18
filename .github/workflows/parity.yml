@@ -1,0 +1,61 @@
+name: Parity check
+
+# framework.json is the single source of truth. framework.yaml,
+# report.schema.json, and the packaged copy of framework.json inside the
+# Python package are all generated from it (or, for report.schema.json,
+# from the Pydantic models). This workflow regenerates all three fresh
+# and fails if the result differs from what's committed — that's the
+# actual difference between "there's a sync script" and "drift is
+# impossible to merge." Running the sync scripts locally proves they
+# work; this proves nobody forgot to run them before committing.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install package + dev dependencies
+        run: pip install -e "packages/python[dev]"
+
+      - name: Regenerate framework.yaml
+        run: python scripts/sync_framework_yaml.py
+
+      - name: Regenerate report.schema.json
+        run: python scripts/sync_report_schema.py
+
+      - name: Regenerate packaged framework.json copy
+        run: python scripts/sync_package_data.py
+
+      - name: Fail if regeneration produced any diff
+        run: |
+          if ! git diff --exit-code --quiet -- \
+              framework.yaml \
+              report.schema.json \
+              packages/python/src/ai_product_pulse/framework.json; then
+            echo "::error::One or more generated files are out of sync with their source."
+            echo "::error::Run the three sync scripts locally and commit the result:"
+            echo "::error::  python scripts/sync_framework_yaml.py"
+            echo "::error::  python scripts/sync_report_schema.py"
+            echo "::error::  python scripts/sync_package_data.py"
+            git diff --stat -- framework.yaml report.schema.json packages/python/src/ai_product_pulse/framework.json
+            exit 1
+          fi
+
+      - name: Run skill parity tests
+        # Frontmatter spec compliance + byte-identical staged copies —
+        # see packages/python/tests/test_skill_parity.py for what this covers.
+        run: |
+          PYTHONPATH=packages/python/src pytest packages/python/tests/test_skill_parity.py -v
